@@ -2,14 +2,14 @@
 
 #include <AccelStepper.h>
 
-AccelStepper horizontal(AccelStepper::DRIVER, 2, 3); // (type, step, dir)
+AccelStepper horizontal(AccelStepper::DRIVER, 3, 2); // (type, step, dir)
 // bar [mm] * steps per rotation * circumference [mm/rot]
 const int horizontalLimit = 7000;
 
-AccelStepper vertical(AccelStepper::DRIVER, 4, 5);
+AccelStepper vertical(AccelStepper::DRIVER, 5, 4);
 const int verticalLimit = -850;
 
-AccelStepper claw(AccelStepper::DRIVER, 6, 7);
+AccelStepper claw(AccelStepper::DRIVER, 7, 6);
 const int clawLimit = 4700;
 
 tcs3200 colorSensor(8, 9, 10, 11, 12); // (s0, s1, s2, s3, out)
@@ -17,18 +17,19 @@ tcs3200 colorSensor(8, 9, 10, 11, 12); // (s0, s1, s2, s3, out)
 const int blockCount = 9;
 const int totalColorCount = blockCount + 1; // plus ground
 int colors[totalColorCount][3] = {          //! colors[0] is ground
-    {0, 0, 0},    {250, 250, 250}, {0, 0, 0},    {142, 34, 41}, {166, 125, 71},
-    {35, 55, 38}, {150, 50, 43},   {22, 25, 45}, {0, 0, 0},     {0, 0, 0}};
+    {66, 58, 85},    {200, 111, 200}, {90, 90, 166},   {125, 200, 333},
+    {166, 200, 166}, {333, 250, 200}, {250, 100, 142}, {66, 62, 100},
+    {142, 125, 166}, {333, 333, 333}};
 
 int colorNumbers[totalColorCount] = {-1, 0, 1, 2, 3, 4, 5, 6, 7, 8};
 String colorNames[totalColorCount] = {
     "0-ground", "1-purple", "2-blue",  "3-cyan", "4-green",
     "5-yellow", "6-red",    "7-black", "8-gray", "9-white"};
 
-int blockPositions[blockCount] = {-1, -1, -1, -1, -1, -1, -1, -1};
+int blockPositions[blockCount] = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
 
-const int blockScanOffset = 50; // steps
-const int blockWidth = 100;     // steps
+const int blockScanOffset = 60;  // steps
+const int sortAreaPadding = 120; // steps (at least blockWidth)
 
 const double sourceAreaSplit = 2.0 / 3.0;
 
@@ -46,7 +47,7 @@ void setup() {
   vertical.setMaxSpeed(2000);
   vertical.setAcceleration(2000);
 
-  vertical.runToNewPosition(-50);
+  vertical.runToNewPosition(-150);
   vertical.setCurrentPosition(0);
 }
 
@@ -63,6 +64,17 @@ void loop() {
 
   while (true)
     continue;
+}
+
+void colorDebug() {
+  Serial.print("detected: ");
+  Serial.print(colorSensor.closestColor(colors, colorNames, totalColorCount));
+  Serial.print("\tred: ");
+  Serial.print(colorSensor.colorRead('r'));
+  Serial.print("\tgreen: ");
+  Serial.print(colorSensor.colorRead('g'));
+  Serial.print("\tblue: ");
+  Serial.println(colorSensor.colorRead('b'));
 }
 
 void scanColors() {
@@ -85,9 +97,12 @@ void scanColors() {
           colorSensor.closestColor(colors, colorNumbers, totalColorCount);
 
       if (block != -1) {
-        Serial.print("Found color ");
-        Serial.println(colorNames[block + 1]);
         blockPositions[block] = horizontal.currentPosition() - blockScanOffset;
+
+        Serial.print("Found color ");
+        Serial.print(colorNames[block + 1]);
+        Serial.print(" at ");
+        Serial.println(blockPositions[block]);
       }
     }
 
@@ -121,16 +136,15 @@ void moveBlocks() {
     vertical.runToNewPosition(verticalLimit);
     delay(movementDelay);
 
-    // area is from max - blockWidth to max * (1-sourceAreaSplit) + blockWidth
-    // padding left and right of bockWidth
-    // 0 should be max - blockWidth
-    // 9 should be max * (1-sourceAreaSplit) + blockWidth
+    // area is from max - sortAreaPadding to max * (1-sourceAreaSplit) +
+    // sortAreaPadding padding left and right of bockWidth 0 should be max -
+    // sortAreaPadding 9 should be max * (1-sourceAreaSplit) + sortAreaPadding
 
     static const int destinationAreaWidth =
-        horizontalLimit * (1 - sourceAreaSplit) - 2 * blockWidth;
+        horizontalLimit * (1 - sourceAreaSplit) - 2 * sortAreaPadding;
     static const int destinationAreaStart =
-        horizontalLimit * sourceAreaSplit + blockWidth;
-    static const int spacePerBlock = destinationAreaWidth / blockCount;
+        horizontalLimit * sourceAreaSplit + sortAreaPadding;
+    static const int spacePerBlock = destinationAreaWidth / (blockCount - 1);
 
     horizontal.runToNewPosition(destinationAreaStart + spacePerBlock * i);
     delay(movementDelay);
