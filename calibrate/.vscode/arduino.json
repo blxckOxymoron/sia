@@ -1,5 +1,5 @@
 {
-  "sketch": "colors.ino",
+  "sketch": "calibrate.ino",
   "output": "build",
   "board": "arduino:avr:uno"
 }
