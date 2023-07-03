@@ -1,6 +1,12 @@
+#pragma region HEADERS
+
 #include <tcs3200.h>
 
 #include <AccelStepper.h>
+
+#pragma endregion HEADERS
+
+#pragma region CONSTANTS
 
 AccelStepper horizontal(AccelStepper::DRIVER, 3, 2); // (type, step, dir)
 // bar [mm] * steps per rotation * circumference [mm/rot]
@@ -35,36 +41,9 @@ const double sourceAreaSplit = 2.0 / 3.0;
 
 const int movementDelay = 200;
 
-void setup() {
-  Serial.begin(9600);
+#pragma endregion CONSTANTS
 
-  horizontal.setMaxSpeed(1000);
-  horizontal.setAcceleration(2000);
-
-  claw.setMaxSpeed(2000);
-  claw.setAcceleration(2000);
-
-  vertical.setMaxSpeed(2000);
-  vertical.setAcceleration(2000);
-
-  vertical.runToNewPosition(-150);
-  vertical.setCurrentPosition(0);
-}
-
-void loop() {
-  // TODO Wait for some sort of signal
-
-  //? 0 Position is claw fully opened, fully on the left, and fully down
-
-  scanColors();
-
-  moveBlocks();
-
-  moveToHome();
-
-  while (true)
-    continue;
-}
+#pragma region FUNCTIONS
 
 void colorDebug() {
   Serial.print("detected: ");
@@ -166,3 +145,40 @@ void moveToHome() {
   horizontal.runToNewPosition(0);
   delay(movementDelay);
 }
+
+#pragma endregion FUNCTIONS
+
+#pragma region ARDUINO_FUNCTIONS
+
+void setup() {
+  Serial.begin(9600);
+
+  horizontal.setMaxSpeed(1000);
+  horizontal.setAcceleration(2000);
+
+  claw.setMaxSpeed(2000);
+  claw.setAcceleration(2000);
+
+  vertical.setMaxSpeed(2000);
+  vertical.setAcceleration(2000);
+
+  vertical.runToNewPosition(-150);
+  vertical.setCurrentPosition(0);
+}
+
+void loop() {
+  // TODO Wait for some sort of signal
+
+  //? 0 Position is claw fully opened, fully on the left, and fully down
+
+  scanColors();
+
+  moveBlocks();
+
+  moveToHome();
+
+  while (true)
+    continue;
+}
+
+#pragma endregion ARDUINO_FUNCTIONS
