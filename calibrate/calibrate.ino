@@ -1,6 +1,12 @@
+#pragma region HEADERS
+
 #include <tcs3200.h>
 
 #include <AccelStepper.h>
+
+#pragma endregion HEADERS
+
+#pragma region CONSTANTS
 
 AccelStepper vertical(AccelStepper::DRIVER, 5, 4);
 const int verticalLimit = -850;
@@ -31,63 +37,54 @@ String colorNames[totalColorCount] = {
     "0-ground", "1-purple", "2-blue",  "3-cyan", "4-green",
     "5-yellow", "6-red",    "7-black", "8-gray", "9-white"};
 
-void setup() {
-  Serial.begin(9600);
-  Serial.println("Calibration started");
-
-  Serial.print("Type a number to calibrate:");
-  for (const String &color : colorNames) {
-    Serial.print(" ");
-    Serial.print(color);
-  }
-  Serial.println();
-
-  Serial.println("To test the sensor, type 'test-on' or 'test-off'");
-  Serial.println("To print info about all colors, type 'info'");
-
-  vertical.setMaxSpeed(2000);
-  vertical.setAcceleration(2000);
-
-  vertical.runToNewPosition(-150);
-  vertical.setCurrentPosition(0);
-}
-
 const int callibrationCount = 20;
 const int callibrationDelay = 100;
 
-void loop() {
-  if (Serial.available()) {
-    String input = Serial.readStringUntil('\n');
-    input.trim();
+#pragma endregion CONSTANTS
 
-    if (input == "test-on") {
-      colorTesting();
-    } else if (input == "test-off") {
-      Serial.println("Test not running");
-    } else if (input == "info") {
-      printAllColorInfo();
-    } else {
-      int colorNumber = input.toInt();
-      if (colorNumber >= 0 && colorNumber < totalColorCount) {
-        Serial.print("Calibrating ");
-        Serial.println(colorNames[colorNumber]);
-        calibrateColor(colorNumber);
-      } else {
-        Serial.println("Invalid input");
-      }
-    }
+#pragma region FUNCTIONS
+
+void printArray(int array[], int size, String separator = ",\t") {
+  Serial.print("{");
+  for (int i = 0; i < size; i++) {
+    if (i != 0)
+      Serial.print(separator);
+    Serial.print(array[i]);
   }
+  Serial.print("}");
 }
 
-void colorTesting() {
-  Serial.println("Test enabled");
+void printColorInfo(int color) {
+  Serial.print("Color info for ");
+  Serial.println(colorNames[color]);
 
-  while (!Serial.available() || Serial.readStringUntil('\n') != "test-off") {
-    printColorReading();
-    delay(1000);
+  Serial.println("\t{r,\tg,\tb}");
+  Serial.print("max:\t");
+  printArray(colorScanMax[color], 3);
+  Serial.println();
+  Serial.print("min:\t");
+  printArray(colorScanMin[color], 3);
+  Serial.println();
+  Serial.print("avg:\t");
+  printArray(colors[color], 3);
+  Serial.println();
+}
+
+void printAllColorInfo() {
+  Serial.println("Printing info for all colors");
+  Serial.println();
+  for (int i = 0; i < totalColorCount; i++) {
+    printColorInfo(i);
+    Serial.println();
   }
 
-  Serial.println("Test disabled");
+  Serial.print("{");
+  for (int i = 0; i < totalColorCount; i++) {
+    if (i != 0)
+      Serial.print(",\t");
+    printArray(colors[i], 3, ", ");
+  }
+  Serial.println("}");
 }
 
 void printColorReading() {
@@ -133,45 +130,64 @@ void calibrateColor(int color) {
   printColorInfo(color);
 }
 
-void printColorInfo(int color) {
-  Serial.print("Color info for ");
-  Serial.println(colorNames[color]);
+void colorTesting() {
+  Serial.println("Test enabled");
 
-  Serial.println("\t{r,\tg,\tb}");
-  Serial.print("max:\t");
-  printArray(colorScanMax[color], 3);
-  Serial.println();
-  Serial.print("min:\t");
-  printArray(colorScanMin[color], 3);
-  Serial.println();
-  Serial.print("avg:\t");
-  printArray(colors[color], 3);
-  Serial.println();
-}
-
-void printArray(int array[], int size, String separator = ",\t") {
-  Serial.print("{");
-  for (int i = 0; i < size; i++) {
-    if (i != 0)
-      Serial.print(separator);
-    Serial.print(array[i]);
-  }
-  Serial.print("}");
-}
-
-void printAllColorInfo() {
-  Serial.println("Printing info for all colors");
-  Serial.println();
-  for (int i = 0; i < totalColorCount; i++) {
-    printColorInfo(i);
-    Serial.println();
+  while (!Serial.available() || Serial.readStringUntil('\n') != "test-off") {
+    printColorReading();
+    delay(1000);
   }
 
-  Serial.print("{");
-  for (int i = 0; i < totalColorCount; i++) {
-    if (i != 0)
-      Serial.print(",\t");
-    printArray(colors[i], 3, ", ");
-  }
-  Serial.println("}");
+  Serial.println("Test disabled");
 }
+
+#pragma endregion FUNCTIONS
+
+#pragma region ARDUINO_FUNCTIONS
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("Calibration started");
+
+  Serial.print("Type a number to calibrate:");
+  for (const String &color : colorNames) {
+    Serial.print(" ");
+    Serial.print(color);
+  }
+  Serial.println();
+
+  Serial.println("To test the sensor, type 'test-on' or 'test-off'");
+  Serial.println("To print info about all colors, type 'info'");
+
+  vertical.setMaxSpeed(2000);
+  vertical.setAcceleration(2000);
+
+  vertical.runToNewPosition(-150);
+  vertical.setCurrentPosition(0);
+}
+
+void loop() {
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
+    input.trim();
+
+    if (input == "test-on") {
+      colorTesting();
+    } else if (input == "test-off") {
+      Serial.println("Test not running");
+    } else if (input == "info") {
+      printAllColorInfo();
+    } else {
+      int colorNumber = input.toInt();
+      if (colorNumber >= 0 && colorNumber < totalColorCount) {
+        Serial.print("Calibrating ");
+        Serial.println(colorNames[colorNumber]);
+        calibrateColor(colorNumber);
+      } else {
+        Serial.println("Invalid input");
+      }
+    }
+  }
+}
+
+#pragma endregion ARDUINO_FUNCTIONS
