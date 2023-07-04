@@ -34,8 +34,8 @@ String colorNames[totalColorCount] = {
 
 int blockPositions[blockCount] = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
 
-const int blockScanOffset = 60;  // steps
-const int sortAreaPadding = 120; // steps (at least blockWidth)
+const int blockScanOffset = 60;  // steps (calculated at 96steps)
+const int sortAreaPadding = 120; // steps (at least blockScanOffset)
 
 const double sourceAreaSplit = 2.0 / 3.0;
 
@@ -61,31 +61,43 @@ void scanColors() {
   //* SCAN THE COLORS
   static const int colorReadInterval = 500; // ms
   static const int speedDivisor = 5;
+  static const int conecutiveBlockCountThreshold = 3; // min 1
 
-  int lastColorRead = -1;
+  int lastColorReadTime = -1;
+
+  int lastBlock = -1;
+  int consecutiveBlockCount = 0;
 
   horizontal.setMaxSpeed(horizontal.maxSpeed() / speedDivisor);
   horizontal.moveTo(horizontalLimit * sourceAreaSplit);
 
   while (horizontal.distanceToGo() != 0) {
+    horizontal.run();
+
     int now = millis();
-    if (now - lastColorRead > colorReadInterval) {
-      lastColorRead = now;
+    if (now - lastColorReadTime > colorReadInterval) {
+      lastColorReadTime = now;
 
       int block =
           colorSensor.closestColor(colors, colorNumbers, totalColorCount);
 
-      if (block != -1) {
+      if (block != lastBlock &&
+          consecutiveBlockCount >= conecutiveBlockCountThreshold) {
         blockPositions[block] = horizontal.currentPosition() - blockScanOffset;
 
-        Serial.print("Found color ");
+        Serial.print("Found block ");
         Serial.print(colorNames[block + 1]);
         Serial.print(" at ");
         Serial.println(blockPositions[block]);
       }
-    }
 
-    horizontal.run();
+      if (block == -1 || block != lastBlock)
+        consecutiveBlockCount = 0;
+      else
+        consecutiveBlockCount++;
+
+      lastBlock = block;
+    }
   }
 
   horizontal.setMaxSpeed(horizontal.maxSpeed() * speedDivisor);
