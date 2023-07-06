@@ -122,6 +122,11 @@ void moveToHome() {
   delay(movementDelay);
 }
 
+void setupVertical() {
+  vertical.runToNewPosition(verticalSetupPosition);
+  vertical.setCurrentPosition(0);
+}
+
 #pragma endregion FUNCTIONS
 
 #pragma region ARDUINO_FUNCTIONS
@@ -137,24 +142,32 @@ void setup() {
 
   vertical.setMaxSpeed(2000);
   vertical.setAcceleration(2000);
-
-  vertical.runToNewPosition(verticalSetupPosition);
-  vertical.setCurrentPosition(0);
 }
 
 void loop() {
   // TODO Wait for some sort of signal
 
   //? 0 Position is claw fully opened, fully on the left, and fully down
+  Serial.println("Enter \n 'up' to setup claw \n 'go' to start sorting \n "
+                 "'home' to move to home position");
 
-  scanColors();
-
-  moveBlocks();
-
-  moveToHome();
-
-  while (true)
+  while (!Serial.available())
     continue;
+
+  String input = Serial.readStringUntil('\n');
+  input.trim();
+
+  if (input == "up") {
+    setupVertical();
+  } else if (input == "go") {
+    scanColors();
+    moveBlocks();
+    moveToHome();
+  } else if (input == "home") {
+    moveToHome();
+  } else {
+    Serial.println("invalid input");
+  }
 }
 
 #pragma endregion ARDUINO_FUNCTIONS
