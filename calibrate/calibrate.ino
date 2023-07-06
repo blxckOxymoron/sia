@@ -32,11 +32,12 @@
 #define MATCH_MODE 'M'
 
 // Pin definitions
+#define S0_OUT 10
+#define S1_OUT 11
 #define S2_OUT 12
 #define S3_OUT 13
-#define OE_OUT 8 // LOW = ENABLED
 
-MD_TCS230 CS(S2_OUT, S3_OUT, OE_OUT);
+MD_TCS230 CS(S2_OUT, S3_OUT, S0_OUT, S1_OUT);
 
 // Global variables
 uint8_t modeOp = 0; // mode of operation

@@ -1,0 +1,5 @@
+{
+    "sketch": "sort.ino",
+    "output": "build",
+    "board": "arduino:avr:uno"
+}

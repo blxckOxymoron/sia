@@ -1,0 +1,4 @@
+{
+  "sketch": "calibrate.ino",
+  "board": "arduino:avr:uno"
+}
